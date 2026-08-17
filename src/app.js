@@ -264,10 +264,12 @@ function renderActiveTour(tour) {
   const checkpointCount = getScannedCheckpointIds(tour).size;
   const phase = getTourPhase(tour);
   const readyToClose = phase === "awaiting_close";
+  const remainingCount = CHECKPOINT_IDS.length - checkpointCount;
   const nextTitle = readyToClose ? "Retour Poste A" : "Points de contrôle";
   const nextCopy = readyToClose
-    ? "Les trois points sont validés. Clôture par scan du Poste A."
-    : "Les points peuvent être scannés dans n'importe quel ordre.";
+    ? "Les trois points sont validés. Scannez le Poste A pour clôturer."
+    : `${remainingCount} point${remainingCount > 1 ? "s" : ""} à scanner. Appuyez sur Nouveau scan à chaque point.`;
+  const primaryLabel = readyToClose ? "Clôturer au Poste A" : "Nouveau scan";
 
   return `
     <div class="stack">
@@ -278,7 +280,7 @@ function renderActiveTour(tour) {
             <h2 class="status-title">${nextTitle}</h2>
             <p class="status-copy">${nextCopy}</p>
           </div>
-          <span class="status-pill ${readyToClose ? "" : "pending"}">${readyToClose ? "Retour" : "En cours"}</span>
+          <span class="status-pill ${readyToClose ? "" : "pending"}">${readyToClose ? "À clôturer" : `${checkpointCount}/3`}</span>
         </div>
         <div class="metric-strip">
           <div class="metric"><span>Départ</span><strong>${formatTime(tour.startedAt)}</strong></div>
@@ -288,7 +290,8 @@ function renderActiveTour(tour) {
       </section>
       ${renderPointRows(tour)}
       <div class="dock">
-        <button class="primary-button" type="button" data-action="scan">${readyToClose ? "Scanner Poste A" : "Scanner un point"}</button>
+        <p class="dock-hint">${readyToClose ? "Dernière étape : retour au Poste A." : "Quand vous arrivez au prochain point, lancez la caméra."}</p>
+        <button class="primary-button" type="button" data-action="scan">${primaryLabel}</button>
         <button class="secondary-button" type="button" data-action="cancel">Annuler</button>
       </div>
     </div>

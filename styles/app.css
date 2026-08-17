@@ -408,6 +408,14 @@ textarea:focus {
   background: linear-gradient(180deg, rgba(16, 19, 24, 0), var(--bg) 26%);
 }
 
+.dock-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .two-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
