@@ -5,6 +5,7 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-height: 100dvh;
   --bg: #101318;
   --surface: #171b22;
   --surface-2: #202630;
@@ -31,7 +32,8 @@ body {
 }
 
 body {
-  min-height: 100dvh;
+  min-height: var(--app-height);
+  height: var(--app-height);
   overflow: hidden;
 }
 
@@ -50,7 +52,8 @@ button {
 }
 
 .app-shell {
-  min-height: 100dvh;
+  min-height: var(--app-height);
+  height: var(--app-height);
   display: flex;
   flex-direction: column;
   padding: calc(14px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
@@ -131,7 +134,7 @@ h3 {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: 4px;
+  padding-bottom: calc(88px + var(--safe-bottom));
   -webkit-overflow-scrolling: touch;
 }
 
@@ -401,10 +404,11 @@ textarea:focus {
 
 .dock {
   position: sticky;
-  bottom: 0;
+  bottom: var(--safe-bottom);
+  z-index: 4;
   display: grid;
   gap: 8px;
-  padding: 10px 0 0;
+  padding: 10px 0 calc(6px + var(--safe-bottom));
   background: linear-gradient(180deg, rgba(16, 19, 24, 0), var(--bg) 26%);
 }
 

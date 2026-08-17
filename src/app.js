@@ -61,9 +61,23 @@ const dom = {
 
 let toastTimer = null;
 
+setupViewportHeight();
 bindEvents();
 render();
 registerServiceWorker();
+
+function setupViewportHeight() {
+  const update = () => {
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    document.documentElement.style.setProperty("--app-height", `${Math.round(viewportHeight)}px`);
+  };
+
+  update();
+  window.addEventListener("resize", update);
+  window.addEventListener("orientationchange", () => window.setTimeout(update, 120));
+  window.visualViewport?.addEventListener("resize", update);
+  window.visualViewport?.addEventListener("scroll", update);
+}
 
 function bindEvents() {
   dom.switchAgentButton.addEventListener("click", () => {
