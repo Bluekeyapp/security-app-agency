@@ -225,7 +225,7 @@ function renderReady() {
           </div>
           <span class="status-pill idle">Libre</span>
         </div>
-        <button class="primary-button" type="button" data-action="start">Scanner Poste A</button>
+        <button class="primary-button" type="button" data-action="start">Nouvelle tournée</button>
       </section>
       ${latest ? renderOutcome(latest) : ""}
       ${renderHistory()}
