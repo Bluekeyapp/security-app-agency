@@ -35,6 +35,10 @@ body {
   overflow: hidden;
 }
 
+body.manager-body {
+  overflow: auto;
+}
+
 button,
 input,
 textarea {
@@ -52,6 +56,18 @@ button {
   padding: calc(14px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
   max-width: 540px;
   margin: 0 auto;
+}
+
+.manager-shell {
+  min-height: 100dvh;
+  padding: calc(14px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.manager-view {
+  display: grid;
+  gap: 14px;
 }
 
 .top-shell {
@@ -400,6 +416,24 @@ textarea:focus {
 
 .summary-panel {
   padding: 14px;
+}
+
+.manager-list {
+  display: grid;
+  gap: 12px;
+}
+
+.manager-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 14px;
+}
+
+.top-shell a.icon-text-button {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
 }
 
 .scan-log {

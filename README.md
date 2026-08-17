@@ -12,8 +12,9 @@ Prototype PWA mobile pour le contrôle de tournées d'agents de sécurité.
 - Annulation avec motif facultatif et suggestions : Incident, Urgence, QR code inaccessible.
 - Nouvelle tournée possible immédiatement après clôture ou annulation.
 - PWA installable avec cache hors ligne de l'interface.
+- Preparation d'une version web avec deux espaces : salarie agent et patron employeur.
 
-Le prototype est volontairement local : les données sont conservées dans `localStorage`.
+Le prototype actuel conserve encore les donnees dans `localStorage`. La prochaine version de test utilisera Supabase pour centraliser les tournees et permettre au patron de les consulter.
 
 ## Lancer localement
 
@@ -27,7 +28,13 @@ Ouvrir ensuite :
 http://localhost:8080
 ```
 
-Pour utiliser la caméra, ouvrez l'app depuis `localhost` dans un navigateur compatible avec `BarcodeDetector`. Si la caméra ou `BarcodeDetector` n'est pas disponible, utilisez la saisie manuelle dans le panneau de scan.
+Espace patron :
+
+```text
+http://localhost:8080/manager.html
+```
+
+Pour utiliser la camera, ouvrez l'app depuis `localhost` ou depuis l'URL HTTPS publiee. Le scan QR se fait par camera ; la saisie manuelle n'est pas disponible dans l'interface agent.
 
 ## Codes QR de test
 
@@ -41,6 +48,23 @@ Les QR peuvent aussi contenir du JSON, par exemple :
 ```json
 { "pointId": "CP_1" }
 ```
+
+## Suite Supabase
+
+La conception de la version web agent + patron est documentee dans :
+
+```text
+docs/supabase-web-test-plan.md
+```
+
+Pour connecter Supabase :
+
+1. Creer un projet Supabase.
+2. Executer le script SQL `supabase/schema.sql`.
+3. Copier l'URL du projet et la cle `anon public`.
+4. Renseigner `src/config.js`.
+
+Sans ces valeurs, l'application reste en mode local de demonstration.
 
 ## Vérifier
 

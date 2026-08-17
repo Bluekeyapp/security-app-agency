@@ -20,6 +20,7 @@ import {
   saveActiveTour,
   saveAgent
 } from "./storage.js";
+import { saveTourRemote } from "./remoteStore.js";
 
 const state = {
   agent: loadAgent(),
@@ -166,6 +167,7 @@ function bindEvents() {
     state.activeTour = null;
     state.pendingStart = false;
     saveActiveTour(null);
+    persistTour(cancelled);
     closeCancelSheet();
     showToast("Tournée annulée");
     render();
@@ -537,7 +539,7 @@ function handleScan(rawPayload) {
 
     state.activeTour = result.tour;
     state.pendingStart = false;
-    saveActiveTour(state.activeTour);
+    persistTour(state.activeTour);
     closeScanner();
     showToast("Tournée démarrée");
     render();
@@ -558,16 +560,29 @@ function handleScan(rawPayload) {
     state.lastOutcomeTour = result.tour;
     state.activeTour = null;
     saveActiveTour(null);
+    persistTour(result.tour);
     closeScanner();
     showToast("Tournée clôturée");
     render();
     return;
   }
 
-  saveActiveTour(state.activeTour);
+  persistTour(state.activeTour);
   closeScanner();
   showToast(result.readyToClose ? "Retour Poste A requis" : "Point validé");
   render();
+}
+
+function persistTour(tour) {
+  saveActiveTour(tour?.status === "active" ? tour : null);
+  saveTourRemote(tour).then((result) => {
+    if (result.ok || result.skipped) {
+      return;
+    }
+
+    console.warn("Remote tour save failed:", result.error);
+    showToast("Synchro différée");
+  });
 }
 
 function getScannerTitle() {

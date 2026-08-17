@@ -1,10 +1,15 @@
-const CACHE_NAME = "security-patrol-v3";
+const CACHE_NAME = "security-patrol-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./manager.html",
   "./styles/app.css",
   "./src/app.js",
+  "./src/config.js",
+  "./src/manager.js",
+  "./src/remoteStore.js",
   "./src/patrol.js",
+  "./src/supabaseClient.js",
   "./src/storage.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
