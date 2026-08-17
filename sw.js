@@ -1,4 +1,4 @@
-const CACHE_NAME = "security-patrol-v8";
+const CACHE_NAME = "security-patrol-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,7 +12,7 @@ const APP_SHELL = [
   "./src/supabaseClient.js",
   "./src/storage.js",
   "./manifest.webmanifest",
-  "./assets/sab-security-logo.png",
+  "./assets/sab-securite-logo-simple.png",
   "./assets/icon.svg",
   "./assets/icon-maskable.svg"
 ];
