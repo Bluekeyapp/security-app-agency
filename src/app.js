@@ -62,6 +62,12 @@ const dom = {
 
 let toastTimer = null;
 
+const QR_SCAN_OPTIONS = {
+  delayBetweenScanAttempts: 120,
+  delayBetweenScanSuccess: 500,
+  tryPlayVideoTimeout: 3000
+};
+
 setupViewportHeight();
 bindEvents();
 render();
@@ -479,6 +485,46 @@ function markCameraStarted() {
   dom.startCameraButton.textContent = "Réessayer la caméra";
 }
 
+function getCameraConstraints() {
+  return {
+    video: {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, max: 30 }
+    },
+    audio: false
+  };
+}
+
+async function applyCameraOptimizations(stream) {
+  const track = stream?.getVideoTracks?.()[0];
+  if (!track?.getCapabilities || !track.applyConstraints) {
+    return;
+  }
+
+  try {
+    const capabilities = track.getCapabilities();
+    if (capabilities.focusMode?.includes("continuous")) {
+      await track.applyConstraints({
+        advanced: [{ focusMode: "continuous" }]
+      });
+    }
+  } catch (error) {
+    console.warn("Camera optimization skipped:", error);
+  }
+}
+
+async function applyZxingCameraOptimizations(controls) {
+  try {
+    await controls?.streamVideoConstraintsApply?.({
+      advanced: [{ focusMode: "continuous" }]
+    });
+  } catch (error) {
+    console.warn("Camera optimization skipped:", error);
+  }
+}
+
 async function loadZxingModule() {
   if (scanner.zxingModule) {
     return scanner.zxingModule;
@@ -490,27 +536,18 @@ async function loadZxingModule() {
 
 async function startNativeScanner() {
   scanner.detector = scanner.detector || new window.BarcodeDetector({ formats: ["qr_code"] });
-  scanner.stream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: { ideal: "environment" }
-    },
-    audio: false
-  });
+  scanner.stream = await navigator.mediaDevices.getUserMedia(getCameraConstraints());
+  await applyCameraOptimizations(scanner.stream);
   dom.scannerVideo.srcObject = scanner.stream;
   await dom.scannerVideo.play();
-  dom.cameraState.textContent = "Recherche QR...";
+  dom.cameraState.textContent = "Recherche QR... rapprochez le code du cadre";
   scanFrame();
 }
 
 async function startZxingScanner(zxingModule) {
-  scanner.zxingReader = scanner.zxingReader || new zxingModule.BrowserQRCodeReader();
+  scanner.zxingReader = scanner.zxingReader || new zxingModule.BrowserQRCodeReader(undefined, QR_SCAN_OPTIONS);
   scanner.zxingControls = await scanner.zxingReader.decodeFromConstraints(
-    {
-      video: {
-        facingMode: { ideal: "environment" }
-      },
-      audio: false
-    },
+    getCameraConstraints(),
     dom.scannerVideo,
     (result, error) => {
       if (result && !scanner.locked) {
@@ -527,7 +564,8 @@ async function startZxingScanner(zxingModule) {
       }
     }
   );
-  dom.cameraState.textContent = "Recherche QR...";
+  await applyZxingCameraOptimizations(scanner.zxingControls);
+  dom.cameraState.textContent = "Recherche QR... rapprochez le code du cadre";
 }
 
 async function scanFrame() {
