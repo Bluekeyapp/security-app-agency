@@ -92,8 +92,13 @@ button {
 .brand-mark {
   width: 42px;
   height: 42px;
+  display: block;
   object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(28, 99, 255, 0.24));
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  filter: none;
   flex-shrink: 0;
 }
 

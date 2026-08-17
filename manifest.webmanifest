@@ -8,13 +8,13 @@
   "theme_color": "#101318",
   "icons": [
     {
-      "src": "./assets/sab-securite-logo-simple.png",
+      "src": "./assets/sab-securite-logo-clean.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./assets/sab-securite-logo-simple.png",
+      "src": "./assets/sab-securite-logo-clean.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
