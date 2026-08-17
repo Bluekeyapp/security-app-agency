@@ -267,7 +267,7 @@ function renderPendingStart() {
       </section>
       <div class="dock">
         <div class="two-actions">
-          <button class="secondary-button" type="button" data-action="cancel-start">Annuler le départ</button>
+          <button class="secondary-button" type="button" data-action="cancel-start">Annuler</button>
           <button class="primary-button" type="button" data-action="scan">Scanner</button>
         </div>
       </div>
