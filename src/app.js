@@ -34,6 +34,9 @@ const state = {
 
 const scanner = {
   detector: null,
+  zxingModule: null,
+  zxingReader: null,
+  zxingControls: null,
   stream: null,
   loopId: null,
   locked: false
@@ -49,8 +52,6 @@ const dom = {
   scannerVideo: document.getElementById("scannerVideo"),
   cameraState: document.getElementById("cameraState"),
   startCameraButton: document.getElementById("startCameraButton"),
-  manualScanForm: document.getElementById("manualScanForm"),
-  manualCode: document.getElementById("manualCode"),
   cancelSheet: document.getElementById("cancelSheet"),
   closeCancelButton: document.getElementById("closeCancelButton"),
   cancelReason: document.getElementById("cancelReason"),
@@ -128,26 +129,9 @@ function bindEvents() {
   dom.closeScannerButton.addEventListener("click", closeScanner);
   dom.startCameraButton.addEventListener("click", startCamera);
 
-  dom.manualScanForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const rawCode = dom.manualCode.value.trim();
-    if (!rawCode) {
-      showToast("Code QR requis");
-      return;
-    }
-
-    handleScan(rawCode);
-  });
-
   dom.scannerSheet.addEventListener("click", (event) => {
     if (event.target === dom.scannerSheet) {
       closeScanner();
-      return;
-    }
-
-    const testCode = event.target.closest("[data-test-scan]")?.dataset.testScan;
-    if (testCode) {
-      handleScan(testCode);
     }
   });
 
@@ -407,8 +391,6 @@ function openScanner() {
   dom.scannerSheet.setAttribute("aria-hidden", "false");
   dom.scannerTitle.textContent = getScannerTitle();
   dom.cameraState.textContent = "Caméra inactive";
-  dom.manualCode.value = "";
-  setTimeout(() => dom.manualCode.focus(), 120);
 }
 
 function closeScanner() {
@@ -419,35 +401,82 @@ function closeScanner() {
 }
 
 async function startCamera() {
-  if (!("BarcodeDetector" in window)) {
-    dom.cameraState.textContent = "Scanner caméra indisponible";
-    showToast("Saisie manuelle disponible");
-    return;
-  }
-
   if (!navigator.mediaDevices?.getUserMedia) {
     dom.cameraState.textContent = "Caméra indisponible";
-    showToast("Saisie manuelle disponible");
+    showToast("Scanner caméra requis");
     return;
   }
 
   try {
-    scanner.detector = scanner.detector || new window.BarcodeDetector({ formats: ["qr_code"] });
-    scanner.stream = await navigator.mediaDevices.getUserMedia({
+    if ("BarcodeDetector" in window) {
+      await startNativeScanner();
+      return;
+    }
+
+    const zxingModule = await loadZxingModule();
+    if (zxingModule?.BrowserQRCodeReader) {
+      await startZxingScanner(zxingModule);
+      return;
+    }
+
+    dom.cameraState.textContent = "Scanner QR indisponible";
+    showToast("Navigateur non compatible");
+  } catch (error) {
+    console.warn("Camera start failed:", error);
+    dom.cameraState.textContent = getCameraErrorMessage(error);
+    showToast("Scanner caméra requis");
+  }
+}
+
+async function loadZxingModule() {
+  if (scanner.zxingModule) {
+    return scanner.zxingModule;
+  }
+
+  scanner.zxingModule = await import("https://esm.sh/@zxing/browser@0.1.5");
+  return scanner.zxingModule;
+}
+
+async function startNativeScanner() {
+  scanner.detector = scanner.detector || new window.BarcodeDetector({ formats: ["qr_code"] });
+  scanner.stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { ideal: "environment" }
+    },
+    audio: false
+  });
+  dom.scannerVideo.srcObject = scanner.stream;
+  await dom.scannerVideo.play();
+  dom.cameraState.textContent = "Recherche QR...";
+  scanFrame();
+}
+
+async function startZxingScanner(zxingModule) {
+  scanner.zxingReader = scanner.zxingReader || new zxingModule.BrowserQRCodeReader();
+  scanner.zxingControls = await scanner.zxingReader.decodeFromConstraints(
+    {
       video: {
         facingMode: { ideal: "environment" }
       },
       audio: false
-    });
-    dom.scannerVideo.srcObject = scanner.stream;
-    await dom.scannerVideo.play();
-    dom.cameraState.textContent = "Recherche QR...";
-    scanFrame();
-  } catch (error) {
-    console.warn("Camera start failed:", error);
-    dom.cameraState.textContent = "Caméra refusée";
-    showToast("Saisie manuelle disponible");
-  }
+    },
+    dom.scannerVideo,
+    (result, error) => {
+      if (result && !scanner.locked) {
+        scanner.locked = true;
+        handleScan(result.getText());
+        window.setTimeout(() => {
+          scanner.locked = false;
+        }, 900);
+        return;
+      }
+
+      if (error?.name && error.name !== "NotFoundException") {
+        console.warn("QR detect failed:", error);
+      }
+    }
+  );
+  dom.cameraState.textContent = "Recherche QR...";
 }
 
 async function scanFrame() {
@@ -474,6 +503,11 @@ async function scanFrame() {
 }
 
 function stopCamera() {
+  if (scanner.zxingControls) {
+    scanner.zxingControls.stop();
+    scanner.zxingControls = null;
+  }
+
   if (scanner.loopId) {
     window.cancelAnimationFrame(scanner.loopId);
     scanner.loopId = null;
@@ -542,6 +576,18 @@ function getScannerTitle() {
   }
 
   return getTourPhase(state.activeTour) === "awaiting_close" ? "Scanner retour Poste A" : "Scanner un point";
+}
+
+function getCameraErrorMessage(error) {
+  if (error?.name === "NotAllowedError" || error?.name === "SecurityError") {
+    return "Autorisation caméra refusée";
+  }
+
+  if (error?.name === "NotFoundError" || error?.name === "OverconstrainedError") {
+    return "Aucune caméra disponible";
+  }
+
+  return "Caméra indisponible";
 }
 
 function openCancelSheet() {
