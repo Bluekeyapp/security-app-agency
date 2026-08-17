@@ -43,7 +43,9 @@ export async function saveTourRemote(tour) {
     gps_accuracy: scan.gps?.accuracy || null
   }));
 
-  const agentResult = await supabase.from("agents").upsert(agentRow);
+  const agentResult = await supabase
+    .from("agents")
+    .upsert(agentRow, { onConflict: "id", ignoreDuplicates: true });
   if (agentResult.error) {
     return { ok: false, error: agentResult.error };
   }
@@ -54,7 +56,9 @@ export async function saveTourRemote(tour) {
   }
 
   if (scanRows.length) {
-    const scansResult = await supabase.from("tour_scans").upsert(scanRows);
+    const scansResult = await supabase
+      .from("tour_scans")
+      .upsert(scanRows, { onConflict: "id", ignoreDuplicates: true });
     if (scansResult.error) {
       return { ok: false, error: scansResult.error };
     }
