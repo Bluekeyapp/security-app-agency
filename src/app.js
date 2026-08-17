@@ -108,11 +108,15 @@ function bindEvents() {
       state.pendingStart = true;
       state.lastOutcomeTour = null;
       render();
-      openScanner();
     }
 
     if (action === "scan") {
       openScanner();
+    }
+
+    if (action === "cancel-start") {
+      state.pendingStart = false;
+      render();
     }
 
     if (action === "cancel") {
@@ -248,7 +252,10 @@ function renderPendingStart() {
         ${renderPointRows(null)}
       </section>
       <div class="dock">
-        <button class="primary-button" type="button" data-action="scan">Scanner Poste A</button>
+        <div class="two-actions">
+          <button class="secondary-button" type="button" data-action="cancel-start">Annuler le départ</button>
+          <button class="primary-button" type="button" data-action="scan">Scanner</button>
+        </div>
       </div>
     </div>
   `;
