@@ -1,0 +1,323 @@
+export const START_POST_ID = "post-a";
+
+export const POINTS = [
+  {
+    id: START_POST_ID,
+    label: "Poste A",
+    kind: "Poste de départ",
+    aliases: ["POST_A", "POST-A", "POSTEA", "POSTE_A", "A", "SEC:POST_A", "SECURITY_POST_A"]
+  },
+  {
+    id: "checkpoint-1",
+    label: "Point 1",
+    kind: "Point de contrôle",
+    aliases: ["CP_1", "CP-1", "CHECKPOINT_1", "POINT_1", "P1", "SEC:CP_1"]
+  },
+  {
+    id: "checkpoint-2",
+    label: "Point 2",
+    kind: "Point de contrôle",
+    aliases: ["CP_2", "CP-2", "CHECKPOINT_2", "POINT_2", "P2", "SEC:CP_2"]
+  },
+  {
+    id: "checkpoint-3",
+    label: "Point 3",
+    kind: "Point de contrôle",
+    aliases: ["CP_3", "CP-3", "CHECKPOINT_3", "POINT_3", "P3", "SEC:CP_3"]
+  }
+];
+
+export const CHECKPOINT_IDS = POINTS
+  .filter((point) => point.id !== START_POST_ID)
+  .map((point) => point.id);
+
+export const CANCEL_SUGGESTIONS = [
+  "Incident",
+  "Urgence",
+  "QR code inaccessible"
+];
+
+const POINT_BY_ID = new Map(POINTS.map((point) => [point.id, point]));
+const ALIAS_TO_POINT = new Map();
+
+POINTS.forEach((point) => {
+  ALIAS_TO_POINT.set(normalizeCode(point.id), point.id);
+  point.aliases.forEach((alias) => ALIAS_TO_POINT.set(normalizeCode(alias), point.id));
+});
+
+export function createAgent({ name, badge }) {
+  const cleanName = String(name || "").trim().slice(0, 80);
+  const cleanBadge = String(badge || "").trim().slice(0, 32);
+
+  if (!cleanName || !cleanBadge) {
+    return null;
+  }
+
+  return {
+    id: `agent-${normalizeCode(cleanBadge).toLowerCase()}`,
+    name: cleanName,
+    badge: cleanBadge
+  };
+}
+
+export function startTour(agent, rawPayload, now = new Date()) {
+  if (!agent?.id) {
+    return { ok: false, reason: "missing_agent" };
+  }
+
+  const point = resolvePoint(rawPayload);
+  if (!point) {
+    return { ok: false, reason: "unknown_qr" };
+  }
+
+  if (point.id !== START_POST_ID) {
+    return { ok: false, reason: "start_requires_post" };
+  }
+
+  const tourId = createId("tour");
+  const scannedAt = toIso(now);
+  const tour = {
+    id: tourId,
+    agentId: agent.id,
+    agentName: agent.name,
+    agentBadge: agent.badge,
+    status: "active",
+    startedAt: scannedAt,
+    completedAt: null,
+    cancelledAt: null,
+    cancelReason: "",
+    scans: [
+      createScan({
+        agentId: agent.id,
+        tourId,
+        point,
+        type: "start",
+        scannedAt,
+        sourcePayload: rawPayload
+      })
+    ]
+  };
+
+  return { ok: true, tour, scan: tour.scans[0] };
+}
+
+export function applyScan(tour, rawPayload, now = new Date()) {
+  if (!tour || tour.status !== "active") {
+    return { ok: false, reason: "tour_not_active", tour };
+  }
+
+  const point = resolvePoint(rawPayload);
+  if (!point) {
+    return { ok: false, reason: "unknown_qr", tour };
+  }
+
+  const scannedCheckpointIds = getScannedCheckpointIds(tour);
+  const allCheckpointsScanned = CHECKPOINT_IDS.every((id) => scannedCheckpointIds.has(id));
+
+  if (point.id === START_POST_ID) {
+    if (!allCheckpointsScanned) {
+      return { ok: false, reason: "close_requires_all_checkpoints", tour };
+    }
+
+    const scannedAt = toIso(now);
+    const closeScan = createScan({
+      agentId: tour.agentId,
+      tourId: tour.id,
+      point,
+      type: "close",
+      scannedAt,
+      sourcePayload: rawPayload
+    });
+
+    const completedTour = {
+      ...tour,
+      status: "completed",
+      completedAt: scannedAt,
+      scans: [...tour.scans, closeScan]
+    };
+
+    return { ok: true, tour: completedTour, scan: closeScan, completed: true };
+  }
+
+  if (!CHECKPOINT_IDS.includes(point.id)) {
+    return { ok: false, reason: "invalid_point", tour };
+  }
+
+  if (scannedCheckpointIds.has(point.id)) {
+    return { ok: false, reason: "checkpoint_already_scanned", tour };
+  }
+
+  const scannedAt = toIso(now);
+  const checkpointScan = createScan({
+    agentId: tour.agentId,
+    tourId: tour.id,
+    point,
+    type: "checkpoint",
+    scannedAt,
+    sourcePayload: rawPayload
+  });
+
+  const updatedTour = {
+    ...tour,
+    scans: [...tour.scans, checkpointScan]
+  };
+
+  return {
+    ok: true,
+    tour: updatedTour,
+    scan: checkpointScan,
+    readyToClose: getScannedCheckpointIds(updatedTour).size === CHECKPOINT_IDS.length
+  };
+}
+
+export function cancelTour(tour, reason = "", now = new Date()) {
+  if (!tour || tour.status !== "active") {
+    return null;
+  }
+
+  return {
+    ...tour,
+    status: "cancelled",
+    cancelledAt: toIso(now),
+    cancelReason: String(reason || "").trim().slice(0, 180)
+  };
+}
+
+export function getPointProgress(tour) {
+  const scansByPoint = new Map();
+  (tour?.scans || []).forEach((scan) => {
+    if (!scansByPoint.has(scan.pointId)) {
+      scansByPoint.set(scan.pointId, scan);
+    }
+  });
+
+  return POINTS.map((point) => ({
+    point,
+    scan: scansByPoint.get(point.id) || null,
+    done: scansByPoint.has(point.id)
+  }));
+}
+
+export function getClosingScan(tour) {
+  return (tour?.scans || []).find((scan) => scan.type === "close") || null;
+}
+
+export function getScannedCheckpointIds(tour) {
+  return new Set(
+    (tour?.scans || [])
+      .filter((scan) => scan.type === "checkpoint")
+      .map((scan) => scan.pointId)
+  );
+}
+
+export function getTourPhase(tour) {
+  if (!tour) {
+    return "idle";
+  }
+
+  if (tour.status === "completed") {
+    return "completed";
+  }
+
+  if (tour.status === "cancelled") {
+    return "cancelled";
+  }
+
+  const scannedCount = getScannedCheckpointIds(tour).size;
+  return scannedCount === CHECKPOINT_IDS.length ? "awaiting_close" : "in_progress";
+}
+
+export function resolvePoint(rawPayload) {
+  const id = resolvePointId(rawPayload);
+  return id ? POINT_BY_ID.get(id) : null;
+}
+
+export function resolvePointId(rawPayload) {
+  const candidates = extractCandidates(rawPayload);
+
+  for (const candidate of candidates) {
+    const direct = ALIAS_TO_POINT.get(normalizeCode(candidate));
+    if (direct) {
+      return direct;
+    }
+  }
+
+  return null;
+}
+
+export function getPoint(pointId) {
+  return POINT_BY_ID.get(pointId) || null;
+}
+
+function extractCandidates(rawPayload) {
+  const raw = String(rawPayload || "").trim();
+  if (!raw) {
+    return [];
+  }
+
+  const candidates = [raw];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      ["pointId", "point", "code", "checkpoint", "station", "id"].forEach((key) => {
+        if (typeof parsed[key] === "string") {
+          candidates.push(parsed[key]);
+        }
+      });
+    }
+  } catch {
+    // Plain QR payloads are expected for the prototype.
+  }
+
+  try {
+    const url = new URL(raw);
+    ["pointId", "point", "code", "checkpoint", "station", "id"].forEach((key) => {
+      const value = url.searchParams.get(key);
+      if (value) {
+        candidates.push(value);
+      }
+    });
+  } catch {
+    // Non-URL payloads are accepted.
+  }
+
+  return candidates;
+}
+
+function createScan({ agentId, tourId, point, type, scannedAt, sourcePayload }) {
+  return {
+    id: createId("scan"),
+    tourId,
+    agentId,
+    pointId: point.id,
+    pointLabel: point.label,
+    type,
+    scannedAt,
+    gps: null,
+    sourcePayload: String(sourcePayload || "").trim().slice(0, 160)
+  };
+}
+
+function normalizeCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+function createId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function toIso(value) {
+  if (typeof value === "string") {
+    return new Date(value).toISOString();
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return new Date().toISOString();
+}
