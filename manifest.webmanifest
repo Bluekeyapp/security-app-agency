@@ -1,23 +1,23 @@
 {
-  "name": "Security App Agency",
-  "short_name": "Security",
-  "description": "Contrôle mobile de tournées QR pour agents de sécurité.",
+  "name": "SAB Sécurité",
+  "short_name": "SAB",
+  "description": "Contrôle mobile de tournées QR pour SAB Sécurité.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#101318",
   "theme_color": "#101318",
   "icons": [
     {
-      "src": "./assets/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "./assets/sab-security-logo.png",
+      "sizes": "338x338",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./assets/icon-maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "src": "./assets/sab-security-logo.png",
+      "sizes": "338x338",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
