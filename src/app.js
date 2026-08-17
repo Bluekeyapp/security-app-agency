@@ -119,12 +119,6 @@ function bindEvents() {
       openCancelSheet();
     }
 
-    if (action === "new-tour") {
-      state.pendingStart = true;
-      state.lastOutcomeTour = null;
-      render();
-      openScanner();
-    }
   });
 
   dom.closeScannerButton.addEventListener("click", closeScanner);
@@ -350,7 +344,6 @@ function renderOutcome(tour) {
       <p class="muted">${subtitle}</p>
       ${reason}
       ${renderScanLog(tour)}
-      <button class="primary-button" type="button" data-action="new-tour">Nouvelle tournée</button>
     </section>
   `;
 }
