@@ -41,7 +41,8 @@ const scanner = {
   stream: null,
   loopId: null,
   locked: false,
-  starting: false
+  starting: false,
+  armedAt: 0
 };
 
 const dom = {
@@ -67,6 +68,7 @@ const QR_SCAN_OPTIONS = {
   delayBetweenScanSuccess: 500,
   tryPlayVideoTimeout: 3000
 };
+const QR_SCAN_ARM_DELAY_MS = 750;
 
 setupViewportHeight();
 bindEvents();
@@ -413,6 +415,7 @@ function renderScanLog(tour) {
 
 function openScanner() {
   state.scannerOpen = true;
+  scanner.armedAt = performance.now() + QR_SCAN_ARM_DELAY_MS;
   dom.scannerSheet.classList.add("is-open");
   dom.scannerSheet.setAttribute("aria-hidden", "false");
   dom.scannerTitle.textContent = getScannerTitle();
@@ -485,6 +488,10 @@ function markCameraStarted() {
   dom.startCameraButton.textContent = "Réessayer la caméra";
 }
 
+function isScannerArmed() {
+  return performance.now() >= (scanner.armedAt || 0);
+}
+
 function getCameraConstraints() {
   return {
     video: {
@@ -540,7 +547,7 @@ async function startNativeScanner() {
   await applyCameraOptimizations(scanner.stream);
   dom.scannerVideo.srcObject = scanner.stream;
   await dom.scannerVideo.play();
-  dom.cameraState.textContent = "Recherche QR... rapprochez le code du cadre";
+  dom.cameraState.textContent = "Stabilisez le QR dans le cadre";
   scanFrame();
 }
 
@@ -551,6 +558,10 @@ async function startZxingScanner(zxingModule) {
     dom.scannerVideo,
     (result, error) => {
       if (result && !scanner.locked) {
+        if (!isScannerArmed()) {
+          return;
+        }
+
         scanner.locked = true;
         handleScan(result.getText());
         window.setTimeout(() => {
@@ -565,7 +576,7 @@ async function startZxingScanner(zxingModule) {
     }
   );
   await applyZxingCameraOptimizations(scanner.zxingControls);
-  dom.cameraState.textContent = "Recherche QR... rapprochez le code du cadre";
+  dom.cameraState.textContent = "Stabilisez le QR dans le cadre";
 }
 
 async function scanFrame() {
@@ -577,6 +588,11 @@ async function scanFrame() {
     const codes = await scanner.detector.detect(dom.scannerVideo);
     const firstCode = codes[0]?.rawValue;
     if (firstCode && !scanner.locked) {
+      if (!isScannerArmed()) {
+        scanner.loopId = window.requestAnimationFrame(scanFrame);
+        return;
+      }
+
       scanner.locked = true;
       handleScan(firstCode);
       window.setTimeout(() => {
