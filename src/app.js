@@ -40,7 +40,8 @@ const scanner = {
   zxingControls: null,
   stream: null,
   loopId: null,
-  locked: false
+  locked: false,
+  starting: false
 };
 
 const dom = {
@@ -409,7 +410,11 @@ function openScanner() {
   dom.scannerSheet.classList.add("is-open");
   dom.scannerSheet.setAttribute("aria-hidden", "false");
   dom.scannerTitle.textContent = getScannerTitle();
-  dom.cameraState.textContent = "Caméra inactive";
+  dom.cameraState.textContent = "Ouverture caméra...";
+  dom.startCameraButton.hidden = false;
+  dom.startCameraButton.disabled = true;
+  dom.startCameraButton.textContent = "Ouverture caméra...";
+  startCamera();
 }
 
 function closeScanner() {
@@ -420,31 +425,58 @@ function closeScanner() {
 }
 
 async function startCamera() {
+  if (scanner.starting || scanner.stream || scanner.zxingControls) {
+    return;
+  }
+
   if (!navigator.mediaDevices?.getUserMedia) {
     dom.cameraState.textContent = "Caméra indisponible";
+    dom.startCameraButton.hidden = false;
+    dom.startCameraButton.disabled = false;
+    dom.startCameraButton.textContent = "Réessayer la caméra";
     showToast("Scanner caméra requis");
     return;
   }
 
+  scanner.starting = true;
+  dom.startCameraButton.disabled = true;
+  dom.startCameraButton.textContent = "Ouverture caméra...";
+
   try {
     if ("BarcodeDetector" in window) {
       await startNativeScanner();
+      markCameraStarted();
       return;
     }
 
     const zxingModule = await loadZxingModule();
     if (zxingModule?.BrowserQRCodeReader) {
       await startZxingScanner(zxingModule);
+      markCameraStarted();
       return;
     }
 
     dom.cameraState.textContent = "Scanner QR indisponible";
+    dom.startCameraButton.hidden = false;
+    dom.startCameraButton.disabled = false;
+    dom.startCameraButton.textContent = "Réessayer la caméra";
     showToast("Navigateur non compatible");
   } catch (error) {
     console.warn("Camera start failed:", error);
     dom.cameraState.textContent = getCameraErrorMessage(error);
+    dom.startCameraButton.hidden = false;
+    dom.startCameraButton.disabled = false;
+    dom.startCameraButton.textContent = "Réessayer la caméra";
     showToast("Scanner caméra requis");
+  } finally {
+    scanner.starting = false;
   }
+}
+
+function markCameraStarted() {
+  dom.startCameraButton.hidden = true;
+  dom.startCameraButton.disabled = false;
+  dom.startCameraButton.textContent = "Réessayer la caméra";
 }
 
 async function loadZxingModule() {
