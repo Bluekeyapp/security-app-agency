@@ -263,7 +263,6 @@ function renderPendingStart() {
           </div>
           <span class="status-pill pending">Attente</span>
         </div>
-        ${renderPointRows(null)}
       </section>
       <div class="dock">
         <div class="two-actions">
@@ -271,6 +270,7 @@ function renderPendingStart() {
           <button class="primary-button" type="button" data-action="scan">Scanner</button>
         </div>
       </div>
+      ${renderPointRows(null)}
     </div>
   `;
 }
@@ -303,12 +303,12 @@ function renderActiveTour(tour) {
           <div class="metric"><span>Agent</span><strong>${escapeHtml(tour.agentBadge)}</strong></div>
         </div>
       </section>
-      ${renderPointRows(tour)}
       <div class="dock">
         <p class="dock-hint">${readyToClose ? "Dernière étape : retour au Poste A." : "Quand vous arrivez au prochain point, lancez la caméra."}</p>
         <button class="primary-button" type="button" data-action="scan">${primaryLabel}</button>
         <button class="secondary-button" type="button" data-action="cancel">Annuler</button>
       </div>
+      ${renderPointRows(tour)}
     </div>
   `;
 }

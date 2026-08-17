@@ -134,7 +134,7 @@ h3 {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: calc(182px + var(--safe-bottom));
+  padding-bottom: calc(28px + var(--safe-bottom));
   -webkit-overflow-scrolling: touch;
 }
 
@@ -403,21 +403,13 @@ textarea:focus {
 }
 
 .dock {
-  position: fixed;
-  left: 50%;
-  right: auto;
-  bottom: calc(10px + var(--safe-bottom));
-  z-index: 10;
-  width: min(calc(100vw - 32px), 508px);
-  transform: translateX(-50%);
+  position: sticky;
+  top: 0;
+  z-index: 8;
   display: grid;
   gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(16, 19, 24, 0.96);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.34);
-  backdrop-filter: blur(12px);
+  padding: 8px 0 10px;
+  background: linear-gradient(180deg, var(--bg) 74%, rgba(16, 19, 24, 0));
 }
 
 .dock-hint {
@@ -430,7 +422,7 @@ textarea:focus {
 
 .two-actions {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
