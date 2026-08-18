@@ -35,8 +35,7 @@ body {
 
 body {
   min-height: var(--app-height);
-  height: var(--app-height);
-  overflow: hidden;
+  overflow: auto;
 }
 
 body.manager-body {
@@ -61,7 +60,6 @@ button {
 
 .app-shell {
   min-height: var(--app-height);
-  height: var(--app-height);
   display: flex;
   flex-direction: column;
   padding: calc(14px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
@@ -144,22 +142,21 @@ h3 {
 }
 
 .main-view {
-  flex: 1;
+  flex: 1 0 auto;
   min-height: 0;
-  overflow-y: auto;
-  padding-bottom: calc(28px + var(--safe-bottom));
+  overflow: visible;
+  padding-bottom: calc(96px + var(--safe-bottom));
   -webkit-overflow-scrolling: touch;
 }
 
 body.keyboard-open .app-shell {
-  height: auto;
   min-height: var(--app-height);
 }
 
 body.keyboard-open .main-view {
-  flex: none;
+  flex: 1 0 auto;
   min-height: calc(var(--app-height) - 86px);
-  overflow-y: visible;
+  overflow: visible;
   padding-bottom: calc(220px + var(--safe-bottom));
 }
 
