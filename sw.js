@@ -1,4 +1,4 @@
-const CACHE_NAME = "security-patrol-v13";
+const CACHE_NAME = "security-patrol-v14";
 const APP_SHELL = [
   "./",
   "./index.html",
