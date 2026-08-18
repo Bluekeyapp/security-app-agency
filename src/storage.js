@@ -43,6 +43,15 @@ export function addTourToHistory(tour) {
   saveTourHistory([tour, ...history].slice(0, 25));
 }
 
+export function replaceTourInHistory(tour) {
+  if (!tour?.id) {
+    return;
+  }
+
+  const history = loadTourHistory();
+  saveTourHistory([tour, ...history.filter((item) => item.id !== tour.id)].slice(0, 25));
+}
+
 function readJson(key, fallback) {
   const raw = localStorage.getItem(key);
   if (!raw) {

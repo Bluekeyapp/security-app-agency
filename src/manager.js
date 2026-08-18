@@ -73,6 +73,7 @@ function renderTourCard(tour) {
         <span class="status-pill ${tour.status === "active" ? "pending" : ""}">${statusLabel}</span>
       </div>
       ${tour.cancelReason ? `<p class="muted">Motif : ${escapeHtml(tour.cancelReason)}</p>` : ""}
+      ${tour.comment ? `<p class="muted">Commentaire : ${escapeHtml(tour.comment)}</p>` : ""}
       <div class="scan-log">
         ${scans.length ? scans.map(renderScanRow).join("") : `<p class="muted">Aucun scan enregistré.</p>`}
       </div>
@@ -107,6 +108,7 @@ function normalizeRemoteTours(rows) {
     completedAt: row.completed_at,
     cancelledAt: row.cancelled_at,
     cancelReason: row.cancel_reason,
+    comment: row.comment || "",
     agentName: row.agent_name,
     agentBadge: row.agent_badge,
     scans: (row.tour_scans || [])

@@ -8,6 +8,7 @@ import {
   getScannedCheckpointIds,
   getTourPhase,
   resolvePointId,
+  setTourComment,
   startTour
 } from "../src/patrol.js";
 
@@ -86,4 +87,12 @@ test("a tour can be cancelled with an optional reason", () => {
   assert.equal(cancelled.status, "cancelled");
   assert.equal(cancelled.cancelReason, "Incident");
   assert.equal(cancelled.cancelledAt, "2026-08-17T10:05:00.000Z");
+});
+
+test("a tour can receive a sanitized comment", () => {
+  const tour = startTour(agent, "POST_A", "2026-08-17T10:00:00Z").tour;
+  const commented = setTourComment(tour, "  Porte arrière vérifiée.  ");
+
+  assert.equal(commented.comment, "Porte arrière vérifiée.");
+  assert.equal(commented.id, tour.id);
 });

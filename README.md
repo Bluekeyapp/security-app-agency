@@ -8,13 +8,14 @@ Prototype PWA mobile pour le contrôle de tournées d'agents de sécurité.
 - Démarrage d'une tournée uniquement après scan du QR code du poste A.
 - Validation de trois points de contrôle dans n'importe quel ordre.
 - Clôture uniquement après les trois points, en rescannant le poste A.
+- Écran commentaire optionnel après clôture de la tournée.
 - Journal des scans avec agent, point, type et heure.
 - Annulation avec motif facultatif et suggestions : Incident, Urgence, QR code inaccessible.
 - Nouvelle tournée possible immédiatement après clôture ou annulation.
 - PWA installable avec cache hors ligne de l'interface.
-- Preparation d'une version web avec deux espaces : salarie agent et patron employeur.
+- Version web avec deux espaces : salarie agent et patron employeur.
 
-Le prototype actuel conserve encore les donnees dans `localStorage`. La prochaine version de test utilisera Supabase pour centraliser les tournees et permettre au patron de les consulter.
+L'application conserve une copie locale dans `localStorage` et synchronise les tournees avec Supabase lorsque la configuration est disponible.
 
 ## Lancer localement
 
@@ -65,6 +66,12 @@ Pour connecter Supabase :
 4. Renseigner `src/config.js`.
 
 Sans ces valeurs, l'application reste en mode local de demonstration.
+
+Si le projet Supabase existait avant l'ajout des commentaires de tournee, relancer au minimum cette ligne dans le SQL Editor :
+
+```sql
+alter table public.tours add column if not exists comment text;
+```
 
 ## Vérifier
 

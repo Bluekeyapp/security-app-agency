@@ -36,9 +36,12 @@ create table if not exists public.tours (
   completed_at timestamptz,
   cancelled_at timestamptz,
   cancel_reason text,
+  comment text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.tours add column if not exists comment text;
 
 create table if not exists public.tour_scans (
   id text primary key,

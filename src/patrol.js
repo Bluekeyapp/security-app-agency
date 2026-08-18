@@ -86,6 +86,7 @@ export function startTour(agent, rawPayload, now = new Date()) {
     completedAt: null,
     cancelledAt: null,
     cancelReason: "",
+    comment: "",
     scans: [
       createScan({
         agentId: agent.id,
@@ -180,6 +181,17 @@ export function cancelTour(tour, reason = "", now = new Date()) {
     status: "cancelled",
     cancelledAt: toIso(now),
     cancelReason: String(reason || "").trim().slice(0, 180)
+  };
+}
+
+export function setTourComment(tour, comment = "") {
+  if (!tour) {
+    return null;
+  }
+
+  return {
+    ...tour,
+    comment: String(comment || "").trim().slice(0, 500)
   };
 }
 

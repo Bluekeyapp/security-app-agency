@@ -26,6 +26,7 @@ export async function saveTourRemote(tour) {
     completed_at: tour.completedAt,
     cancelled_at: tour.cancelledAt,
     cancel_reason: tour.cancelReason || "",
+    comment: tour.comment || "",
     updated_at: new Date().toISOString()
   };
 
@@ -50,7 +51,7 @@ export async function saveTourRemote(tour) {
     return { ok: false, error: agentResult.error };
   }
 
-  const tourResult = await supabase.from("tours").upsert(tourRow);
+  const tourResult = await upsertTour(supabase, tourRow);
   if (tourResult.error) {
     return { ok: false, error: tourResult.error };
   }
@@ -73,7 +74,31 @@ export async function fetchManagerTours() {
     return { ok: false, skipped: true, tours: [] };
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await selectTours(supabase, true);
+
+  if (error && isMissingCommentColumn(error)) {
+    ({ data, error } = await selectTours(supabase, false));
+  }
+
+  if (error) {
+    return { ok: false, error, tours: [] };
+  }
+
+  return { ok: true, tours: data || [] };
+}
+
+async function upsertTour(supabase, tourRow) {
+  const result = await supabase.from("tours").upsert(tourRow);
+  if (!result.error || !isMissingCommentColumn(result.error)) {
+    return result;
+  }
+
+  const { comment, ...legacyTourRow } = tourRow;
+  return supabase.from("tours").upsert(legacyTourRow);
+}
+
+function selectTours(supabase, includeComment) {
+  return supabase
     .from("tours")
     .select(`
       id,
@@ -82,6 +107,7 @@ export async function fetchManagerTours() {
       completed_at,
       cancelled_at,
       cancel_reason,
+      ${includeComment ? "comment," : ""}
       agent_name,
       agent_badge,
       tour_scans (
@@ -93,10 +119,9 @@ export async function fetchManagerTours() {
     `)
     .order("started_at", { ascending: false })
     .limit(50);
+}
 
-  if (error) {
-    return { ok: false, error, tours: [] };
-  }
-
-  return { ok: true, tours: data || [] };
+function isMissingCommentColumn(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("comment") && message.includes("column");
 }

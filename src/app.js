@@ -9,6 +9,7 @@ import {
   getPointProgress,
   getScannedCheckpointIds,
   getTourPhase,
+  setTourComment,
   startTour
 } from "./patrol.js";
 import {
@@ -17,6 +18,7 @@ import {
   loadActiveTour,
   loadAgent,
   loadTourHistory,
+  replaceTourInHistory,
   saveActiveTour,
   saveAgent
 } from "./storage.js";
@@ -27,6 +29,7 @@ const state = {
   activeTour: loadActiveTour(),
   history: loadTourHistory(),
   pendingStart: false,
+  commentTour: null,
   lastOutcomeTour: null,
   scannerOpen: false,
   cancelOpen: false,
@@ -95,16 +98,24 @@ function bindEvents() {
     state.agent = null;
     state.activeTour = null;
     state.pendingStart = false;
+    state.commentTour = null;
     state.lastOutcomeTour = null;
     render();
   });
 
   dom.mainView.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    if (event.target.id === "commentForm") {
+      const formData = new FormData(event.target);
+      finishCommentStep(formData.get("tourComment"));
+      return;
+    }
+
     if (event.target.id !== "loginForm") {
       return;
     }
 
-    event.preventDefault();
     const formData = new FormData(event.target);
     const agent = createAgent({
       name: formData.get("agentName"),
@@ -146,6 +157,9 @@ function bindEvents() {
       openCancelSheet();
     }
 
+    if (action === "comment-skip") {
+      finishCommentStep("");
+    }
   });
 
   dom.closeScannerButton.addEventListener("click", closeScanner);
@@ -201,6 +215,11 @@ function render() {
 
   if (!state.agent) {
     dom.mainView.innerHTML = renderLogin();
+    return;
+  }
+
+  if (state.commentTour) {
+    dom.mainView.innerHTML = renderCommentStep(state.commentTour);
     return;
   }
 
@@ -359,6 +378,35 @@ function renderPointRows(tour) {
   `;
 }
 
+function renderCommentStep(tour) {
+  return `
+    <div class="stack">
+      <section class="status-panel">
+        <div class="status-top">
+          <div>
+            <p class="eyebrow">Fin de tournée</p>
+            <h2 class="status-title">Commentaire</h2>
+            <p class="status-copy">Ajoutez une remarque utile pour le patron, si nécessaire.</p>
+          </div>
+          <span class="status-pill">Clôturée</span>
+        </div>
+        <form class="field-stack" id="commentForm">
+          <label>
+            Commentaire de tournée
+            <textarea name="tourComment" rows="5" maxlength="500" placeholder="Exemple : portail arrière vérifié, rien à signaler.">${escapeHtml(tour.comment || "")}</textarea>
+          </label>
+          <button class="primary-button" type="submit">Enregistrer</button>
+          <button class="secondary-button" type="button" data-action="comment-skip">Passer</button>
+        </form>
+      </section>
+      <section class="summary-panel">
+        <p class="eyebrow">Scans validés</p>
+        ${renderScanLog(tour)}
+      </section>
+    </div>
+  `;
+}
+
 function renderOutcome(tour) {
   const isCompleted = tour.status === "completed";
   const title = isCompleted ? "Tournée clôturée" : "Tournée annulée";
@@ -366,6 +414,7 @@ function renderOutcome(tour) {
     ? `${formatTime(tour.startedAt)} - ${formatTime(tour.completedAt)}`
     : `${formatTime(tour.startedAt)} - ${formatTime(tour.cancelledAt)}`;
   const reason = !isCompleted && tour.cancelReason ? `<p class="muted">Motif : ${escapeHtml(tour.cancelReason)}</p>` : "";
+  const comment = tour.comment ? `<p class="muted">Commentaire : ${escapeHtml(tour.comment)}</p>` : "";
 
   return `
     <section class="summary-panel">
@@ -373,6 +422,7 @@ function renderOutcome(tour) {
       <h3>${title}</h3>
       <p class="muted">${subtitle}</p>
       ${reason}
+      ${comment}
       ${renderScanLog(tour)}
     </section>
   `;
@@ -660,7 +710,8 @@ function handleScan(rawPayload) {
   if (result.completed) {
     addTourToHistory(result.tour);
     state.history = loadTourHistory();
-    state.lastOutcomeTour = result.tour;
+    state.commentTour = result.tour;
+    state.lastOutcomeTour = null;
     state.activeTour = null;
     saveActiveTour(null);
     persistTour(result.tour);
@@ -673,6 +724,21 @@ function handleScan(rawPayload) {
   persistTour(state.activeTour);
   closeScanner();
   showToast(result.readyToClose ? "Retour Poste A requis" : "Point validé");
+  render();
+}
+
+function finishCommentStep(rawComment) {
+  if (!state.commentTour) {
+    return;
+  }
+
+  const updatedTour = setTourComment(state.commentTour, rawComment);
+  replaceTourInHistory(updatedTour);
+  state.history = loadTourHistory();
+  state.commentTour = null;
+  state.lastOutcomeTour = updatedTour;
+  persistTour(updatedTour);
+  showToast(updatedTour.comment ? "Commentaire ajouté" : "Tournée enregistrée");
   render();
 }
 
