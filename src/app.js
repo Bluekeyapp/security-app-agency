@@ -162,6 +162,29 @@ function bindEvents() {
     }
   });
 
+  dom.mainView.addEventListener("focusin", (event) => {
+    if (!event.target.matches("[data-keyboard-field]")) {
+      return;
+    }
+
+    document.body.classList.add("keyboard-open");
+    window.setTimeout(() => {
+      event.target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 180);
+  });
+
+  dom.mainView.addEventListener("focusout", (event) => {
+    if (!event.target.matches("[data-keyboard-field]")) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (!dom.mainView.contains(document.activeElement)) {
+        document.body.classList.remove("keyboard-open");
+      }
+    }, 120);
+  });
+
   dom.closeScannerButton.addEventListener("click", closeScanner);
   dom.startCameraButton.addEventListener("click", startCamera);
 
@@ -380,7 +403,7 @@ function renderPointRows(tour) {
 
 function renderCommentStep(tour) {
   return `
-    <div class="stack">
+    <div class="stack comment-step">
       <section class="status-panel">
         <div class="status-top">
           <div>
@@ -393,7 +416,7 @@ function renderCommentStep(tour) {
         <form class="field-stack" id="commentForm">
           <label>
             Commentaire de tournée
-            <textarea name="tourComment" rows="5" maxlength="500" placeholder="Exemple : portail arrière vérifié, rien à signaler.">${escapeHtml(tour.comment || "")}</textarea>
+            <textarea name="tourComment" rows="5" maxlength="500" placeholder="Exemple : portail arrière vérifié, rien à signaler." data-keyboard-field>${escapeHtml(tour.comment || "")}</textarea>
           </label>
           <button class="primary-button" type="submit">Enregistrer</button>
           <button class="secondary-button" type="button" data-action="comment-skip">Passer</button>

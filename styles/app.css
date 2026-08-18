@@ -41,6 +41,12 @@ body.manager-body {
   overflow: auto;
 }
 
+body.keyboard-open {
+  height: auto;
+  min-height: var(--app-height);
+  overflow: auto;
+}
+
 button,
 input,
 textarea {
@@ -143,6 +149,18 @@ h3 {
   -webkit-overflow-scrolling: touch;
 }
 
+body.keyboard-open .app-shell {
+  height: auto;
+  min-height: var(--app-height);
+}
+
+body.keyboard-open .main-view {
+  flex: none;
+  min-height: calc(var(--app-height) - 86px);
+  overflow-y: visible;
+  padding-bottom: calc(220px + var(--safe-bottom));
+}
+
 .main-view::-webkit-scrollbar {
   display: none;
 }
@@ -195,6 +213,11 @@ input {
 textarea {
   padding: 12px 13px;
   resize: none;
+}
+
+.comment-step textarea {
+  min-height: 150px;
+  resize: vertical;
 }
 
 input:focus,
