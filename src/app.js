@@ -49,6 +49,7 @@ const scanner = {
 };
 
 const dom = {
+  viewportMeta: document.querySelector('meta[name="viewport"]'),
   mainView: document.getElementById("mainView"),
   switchAgentButton: document.getElementById("switchAgentButton"),
   toast: document.getElementById("toast"),
@@ -72,6 +73,7 @@ const QR_SCAN_OPTIONS = {
   tryPlayVideoTimeout: 3000
 };
 const QR_SCAN_ARM_DELAY_MS = 750;
+const VIEWPORT_CONTENT = "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover";
 
 setupViewportHeight();
 bindEvents();
@@ -89,6 +91,16 @@ function setupViewportHeight() {
   window.addEventListener("orientationchange", () => window.setTimeout(update, 120));
   window.visualViewport?.addEventListener("resize", update);
   window.visualViewport?.addEventListener("scroll", update);
+}
+
+function resetViewportZoom() {
+  if (dom.viewportMeta) {
+    dom.viewportMeta.setAttribute("content", VIEWPORT_CONTENT);
+  }
+
+  window.setTimeout(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, 0);
 }
 
 function bindEvents() {
@@ -168,6 +180,7 @@ function bindEvents() {
     }
 
     document.body.classList.add("keyboard-open");
+    resetViewportZoom();
     window.setTimeout(() => {
       event.target.scrollIntoView({ block: "center", behavior: "smooth" });
     }, 180);
@@ -181,6 +194,7 @@ function bindEvents() {
     window.setTimeout(() => {
       if (!dom.mainView.contains(document.activeElement)) {
         document.body.classList.remove("keyboard-open");
+        resetViewportZoom();
       }
     }, 120);
   });
@@ -233,6 +247,7 @@ function bindEvents() {
 }
 
 function render() {
+  resetViewportZoom();
   dom.switchAgentButton.hidden = !state.agent;
   dom.switchAgentButton.textContent = state.agent ? state.agent.badge : "Agent";
 
@@ -487,6 +502,7 @@ function renderScanLog(tour) {
 }
 
 function openScanner() {
+  resetViewportZoom();
   state.scannerOpen = true;
   scanner.armedAt = performance.now() + QR_SCAN_ARM_DELAY_MS;
   dom.scannerSheet.classList.add("is-open");
@@ -504,6 +520,7 @@ function closeScanner() {
   state.scannerOpen = false;
   dom.scannerSheet.classList.remove("is-open");
   dom.scannerSheet.setAttribute("aria-hidden", "true");
+  resetViewportZoom();
 }
 
 async function startCamera() {
